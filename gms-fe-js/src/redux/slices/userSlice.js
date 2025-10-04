@@ -7,9 +7,7 @@ export const userSlice = createSlice({
         currentUser: null,
         token: null,
         isFetching: false,
-        error: false,
-        features: [],
-        isSuperAdmin: false,
+        error: false
     },
 
     reducers: {
@@ -20,11 +18,43 @@ export const userSlice = createSlice({
         loginSuccess: (state, action) => {
             const payload = action.payload;
             state.isFetching = false;
-            state.currentUser = payload.user || payload;
-            state.token = payload.token;
+            
+            // Ensure we have data in the payload
+            if (!payload?.data) {
+                console.error('Login success called with invalid payload:', payload);
+                state.error = 'Invalid login response';
+                return;
+            }
+
+            const { token, user } = payload.data;
+
+            // Store token
+            state.token = token;
+            
+            // Store user data with features
+            state.currentUser = {
+                ...user,
+                features: user.features || []  // Ensure features array exists
+            };
+            
+            // Log warning if no features found
+            if (!user.features?.length) {
+                console.warn('User has no features assigned:', user.email);
+            }
+
+            // Set isSuperAdmin from user data
+            state.currentUser.isSuperAdmin = user.isSuperAdmin || false;
+            
+            // Clear any previous errors
             state.error = false;
-            state.features = payload.user?.features || [];
-            state.isSuperAdmin = payload.user?.isSuperAdmin || false;
+            
+            // Log final state for debugging
+            console.log('Redux user state after login:', {
+                email: user.email,
+                features: state.currentUser.features,
+                isSuperAdmin: state.currentUser.isSuperAdmin,
+                token
+            });
         },
 
         loginFailure: (state, action) => {
@@ -39,8 +69,6 @@ export const userSlice = createSlice({
             state.token = null;
             state.isFetching = false;
             state.error = false;
-            state.features = [];
-            state.isSuperAdmin = false;
         },
 
         // Action to update token without full login

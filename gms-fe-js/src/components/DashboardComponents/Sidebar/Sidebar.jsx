@@ -1,37 +1,35 @@
 'use client';
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useSelector } from 'react-redux';
-import { ALL_FEATURES } from '@/constants/sidebar-features';
 
 const Sidebar = () => {
-    const { features = [], isSuperAdmin } = useSelector(state => state.user);
-    
-    console.log("Sidebar Redux state:", { features, isSuperAdmin });
-    
-    // Filter features based on permissions
-    const visibleFeatures = useMemo(() => {
-        console.log("Filtering features:", {
-            allFeatures: ALL_FEATURES.map(f => f.key),
-            userFeatures: features,
-            isSuperAdmin
-        });
-        return isSuperAdmin 
-            ? ALL_FEATURES 
-            : ALL_FEATURES.filter(f => {
-                const hasFeature = features.includes(f.key);
-                console.log(`Checking feature "${f.key}":`, hasFeature);
-                return hasFeature;
-              });
-    }, [features, isSuperAdmin]);
+    // Get user state from Redux
+    const { currentUser } = useSelector(state => state.user);
+    const features = currentUser?.features || [];
+    const isSuperAdmin = currentUser?.isSuperAdmin || false;
 
     const [expandedSections, setExpandedSections] = useState(() => {
-        // Initialize expanded state for each feature, with first one expanded
-        return ALL_FEATURES.reduce((acc, feature, index) => ({
-            ...acc,
-            [feature.key.toLowerCase().replace(/\s+/g, '')]: index === 0
-        }), {});
+        // Initialize collapsed state for all sections
+        return {
+            setup: false,
+            registration: false,
+            deployment: false,
+            attendance: false,
+            payroll: false,
+            finance: false,
+            reports: false,
+            support: false,
+            documents: false,
+            settings: false,
+            salesMonitor: false,
+            performanceManager: false,
+            inventoryManagement: false,
+            complaints: false,
+            notifications: false,
+            viewReports: false
+        };
     });
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -55,11 +53,22 @@ const Sidebar = () => {
                     {sidebarOpen && <span className="ml-2">Collapse Sidebar</span>}
                 </button>
 
-                {/* Render only visible features */}
-                {visibleFeatures.map((feature) => {
-                    const sectionKey = feature.key.toLowerCase().replace(/\s+/g, '');
-                    const isExpanded = expandedSections[sectionKey];
-                    const Icon = feature.icon;
+                {/* Show message if no features available */}
+                {visibleFeatures.length === 0 ? (
+                    <div className="px-4 py-3 text-sm text-gray-500 bg-gray-50 rounded-md">
+                        <p className="font-medium mb-1">No Features Available</p>
+                        <p className="text-xs">
+                            {isSuperAdmin 
+                                ? "Error loading features. Please try again."
+                                : "No features have been assigned to your account. Please contact your administrator."}
+                        </p>
+                    </div>
+                ) : (
+                    // Render features if available
+                    visibleFeatures.map((feature) => {
+                        const sectionKey = feature.key.toLowerCase().replace(/\s+/g, '');
+                        const isExpanded = expandedSections[sectionKey];
+                        const Icon = feature.icon;
 
                     return (
                         <div key={feature.key} className="mb-2">
@@ -92,7 +101,7 @@ const Sidebar = () => {
                             )}
                         </div>
                     );
-                })}
+                }))}
 
                 {/* Dashboards Section */}
                 <div className="mb-6">
@@ -114,236 +123,383 @@ const Sidebar = () => {
                     </h3>
 
 
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('setup')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/setup.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Setup'}
-                            </div>
-                            {sidebarOpen && (expandedSections.setup ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.setup && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/setup/create-office"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Create Office
-                                </Link>
-                                <Link
-                                    href="/dashboard/setup/create-user"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Create User
-                                </Link>
-                                <Link
-                                    href="/dashboard/setup/add-guards-category"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Add Guards Category
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                    {/* Setup Section */}
+                    {(isSuperAdmin || features.includes("setup")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('setup')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/setup.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Setup'}
+                                </div>
+                                {sidebarOpen && (expandedSections.setup ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.setup && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/setup/create-office"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Create Office
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/setup/create-user"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Create User
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/setup/add-guards-category"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Add Guards Category
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
+                    {/* Registration Section */}
+                    {(isSuperAdmin || features.includes("registration")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('registration')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/registration.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Registration'}
+                                </div>
+                                {sidebarOpen && (expandedSections.registration ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.registration && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/registration/guards-registration"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Guards Registration
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/registration/employee-registration"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Employee Registration
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/registration/clients-registration"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Clients Registration
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/registration/location-registration"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Location Registration
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('registration')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/registration.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Registration'}
-                            </div>
-                            {sidebarOpen && (expandedSections.registration ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.registration && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/registration/guards-registration"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Guards Registration
-                                </Link>
-                                <Link
-                                    href="/dashboard/registration/employee-registration"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Employee Registration
-                                </Link>
-                                <Link
-                                    href="/dashboard/registration/clients-registration"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Clients Registration
-                                </Link>
-                                <Link
-                                    href="/dashboard/registration/location-registration"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Location Registration
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                    {/* Deployment Section */}
+                    {(isSuperAdmin || features.includes("deployment")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('deployment')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/deployment.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Deployment'}
+                                </div>
+                                {sidebarOpen && (expandedSections.deployment ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.deployment && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/deployment/assign-guards"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Assign Guards
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/deployment/assign-supervisor"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Assign Supervisor
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
+                    {/* Attendance Section */}
+                    {(isSuperAdmin || features.includes("attendance")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('attendance')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/deployment.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Attendance'}
+                                </div>
+                                {sidebarOpen && (expandedSections.attendance ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.attendance && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/attendance/location-attendance"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Location Attendance
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('deployment')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/deployment.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Deployment'}
-                            </div>
-                            {sidebarOpen && (expandedSections.deployment ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.deployment && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/deployment/assign-guards"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Assign Guards
-                                </Link>
-                                <Link
-                                    href="/dashboard/deployment/assign-supervisor"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Assign Supervisor
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                    {/* Payroll Section */}
+                    {(isSuperAdmin || features.includes("payroll")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('payroll')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/payroll.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Pay Roll'}
+                                </div>
+                                {sidebarOpen && (expandedSections.payroll ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.payroll && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/payroll/location-attendance-sheet"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Generate Payroll
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    {/* Attendance */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('attendance')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/deployment.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Attendance'}
-                            </div>
-                            {sidebarOpen && (expandedSections.attendance ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.attendance && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/attendance/location-attendance"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Location Attendance
-                                </Link>
+                    {/* Accounts & Finance Section */}
+                    {(isSuperAdmin || features.includes("accounts_finance")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('finance')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/finance.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Accounts & Finance'}
+                                </div>
+                                {sidebarOpen && (expandedSections.finance ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.finance && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/accounts-finance/bills"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Bills
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/accounts-finance/quotations"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Quotations
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/accounts-finance/tax-calculation"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Tax Calculation
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                            </div>
-                        )}
-                    </div>
+                    {/* Reports Section */}
+                    {(isSuperAdmin || features.includes("reports")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('reports')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/reports.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Reports'}
+                                </div>
+                                {sidebarOpen && (expandedSections.reports ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.reports && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/reports/attendance-reports"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Attendance Reports
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/reports/salary-reports"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Salary Reports
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/reports/account-reports"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Account Reports
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                    {/* Pay Roll */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('payroll')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/payroll.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Pay Roll'}
-                            </div>
-                            {sidebarOpen && (expandedSections.payroll ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.payroll && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/payroll/location-attendance-sheet"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Generate Payroll
-                                </Link>
-                               
+                    {/* Support Section */}
+                    {(isSuperAdmin || features.includes("support")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('support')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/support.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Support'}
+                                </div>
+                                {sidebarOpen && (expandedSections.support ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.support && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/support/messages"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Messages
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/support/notifications"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Notifications
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
+                    {/* Documents Section */}
+                    {(isSuperAdmin || features.includes("documents")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('documents')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/documents.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Documents'}
+                                </div>
+                                {sidebarOpen && (expandedSections.documents ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.documents && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/documents/official"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Official Documents
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Accounts & Finance */}
-                    <div className="mb-2">
-                        <button
-                            onClick={() => toggleSection('accounts')}
-                            className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
-                        >
-                            <div className="flex items-center">
-                                <img src='/icons/accounts.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Accounts & Finance'}
-                            </div>
-                            {sidebarOpen && (expandedSections.accounts ? (
-                                <ChevronDown className="h-4 w-4" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4" />
-                            ))}
-                        </button>
-                        {sidebarOpen && expandedSections.accounts && (
-                            <div className="ml-6 mt-1 space-y-1">
-                                <Link
-                                    href="/dashboard/accounts/petty-cash"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Petty Cash
-                                </Link>
-                                <Link
-                                    href="/dashboard/accounts/payment-vouchers"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Payment Vouchers
-                                </Link>
-                                <Link
-                                    href="/dashboard/accounts/accounts-allowance"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Allowance & Deductions
-                                </Link>
-                                <Link
-                                    href="/dashboard/accounts/accounts-invoices"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -Invoices
-                                </Link>
-                                <Link
-                                    href="/dashboard/accounts/accounts-general-ledger"
-                                    className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
-                                >
-                                    -General Ledger
-                                </Link>
-                            </div>
-                        )}
-                    </div>
+                    {/* Settings Section */}
+                    {(isSuperAdmin || features.includes("settings")) && (
+                        <div className="mb-2">
+                            <button
+                                onClick={() => toggleSection('settings')}
+                                className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
+                            >
+                                <div className="flex items-center">
+                                    <img src='/icons/settings.png' className="mr-3 h-4 w-4" />
+                                    {sidebarOpen && 'Settings'}
+                                </div>
+                                {sidebarOpen && (expandedSections.settings ? (
+                                    <ChevronDown className="h-4 w-4" />
+                                ) : (
+                                    <ChevronRight className="h-4 w-4" />
+                                ))}
+                            </button>
+                            {sidebarOpen && expandedSections.settings && (
+                                <div className="ml-6 mt-1 space-y-1">
+                                    <Link
+                                        href="/dashboard/settings/profile"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Profile Settings
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/settings/organization"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -Organization Settings
+                                    </Link>
+                                    <Link
+                                        href="/dashboard/settings/user-management"
+                                        className="block px-3 py-2 text-[13px] text-gray-700 hover:bg-gray-100 rounded-md"
+                                    >
+                                        -User Management
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* Sales Monitor */}
                     <div className="mb-2">
@@ -534,23 +690,23 @@ const Sidebar = () => {
                         )}
                     </div>
 
-                    {/* Reports */}
+                    {/* View Reports */}
                     <div className="mb-2">
                         <button
-                            onClick={() => toggleSection('reports')}
+                            onClick={() => toggleSection('viewReports')}
                             className="flex items-center justify-between w-full px-3 py-2 text-[13px] font-medium text-gray-700 hover:bg-gray-100 rounded-md"
                         >
                             <div className="flex items-center">
                                 <img src='/icons/accounts.png' className="mr-3 h-4 w-4" />
-                                {sidebarOpen && 'Reports'}
+                                {sidebarOpen && 'View Reports'}
                             </div>
-                            {sidebarOpen && (expandedSections.reports ? (
+                            {sidebarOpen && (expandedSections.viewReports ? (
                                 <ChevronDown className="h-4 w-4" />
                             ) : (
                                 <ChevronRight className="h-4 w-4" />
                             ))}
                         </button>
-                        {sidebarOpen && expandedSections.reports && (
+                        {sidebarOpen && expandedSections.viewReports && (
                             <div className="ml-6 mt-1 space-y-1">
                                 <Link
                                     href="/dashboard/reports/offices"
@@ -582,7 +738,6 @@ const Sidebar = () => {
                                 >
                                     -Location
                                 </Link>
-
                             </div>
                         )}
                     </div>
@@ -592,4 +747,4 @@ const Sidebar = () => {
     );
 };
 
-export default Sidebar; 
+export default Sidebar;

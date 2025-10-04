@@ -117,11 +117,12 @@ const Login = () => {
                     localStorage.setItem("keepSignedIn", "true");
                 }
 
-                // Check user role from the user data
-                const userRole = userData.roleName;  // Role is directly in userData.roleName
-                console.log('User Role:', userRole);
+                // Check if user is superadmin
+                const isSuperAdmin = userData.isSuperAdmin;
+                const userRole = userData.role;
+                console.log('User Role:', userRole, 'Is SuperAdmin:', isSuperAdmin);
                 
-                if (userRole === 'superAdmin') {
+                if (isSuperAdmin) {
                     console.log('Redirecting to super admin dashboard');
                     router.push('/super-admin/dashboard');
                 } else {
