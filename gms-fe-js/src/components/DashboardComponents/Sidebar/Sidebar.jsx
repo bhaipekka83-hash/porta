@@ -1,35 +1,54 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import { ALL_FEATURES } from '@/constants/sidebar-features';
 
 const Sidebar = () => {
     // Get user state from Redux
     const { currentUser } = useSelector(state => state.user);
     const features = currentUser?.features || [];
     const isSuperAdmin = currentUser?.isSuperAdmin || false;
+    
+    // Debug logging
+    console.log("Sidebar Redux state:", { 
+        userEmail: currentUser?.email,
+        features,
+        isSuperAdmin 
+    });
+    
+    // Filter features based on permissions
+    const visibleFeatures = useMemo(() => {
+        // Early return for superadmin
+        if (isSuperAdmin) {
+            console.log("Superadmin: showing all features");
+            return ALL_FEATURES;
+        }
+
+        // Validate features array
+        if (!Array.isArray(features) || features.length === 0) {
+            console.warn(`No features found for user: ${currentUser?.email}`);
+            return [];
+        }
+
+        // Filter features based on permissions
+        const filtered = ALL_FEATURES.filter(f => {
+            const hasFeature = features.includes(f.key);
+            console.log(`Feature check: ${f.key} = ${hasFeature}`);
+            return hasFeature;
+        });
+
+        console.log(`Filtered ${filtered.length} visible features for user`);
+        return filtered;
+    }, [features, isSuperAdmin, currentUser?.email]);
 
     const [expandedSections, setExpandedSections] = useState(() => {
-        // Initialize collapsed state for all sections
-        return {
-            setup: false,
-            registration: false,
-            deployment: false,
-            attendance: false,
-            payroll: false,
-            finance: false,
-            reports: false,
-            support: false,
-            documents: false,
-            settings: false,
-            salesMonitor: false,
-            performanceManager: false,
-            inventoryManagement: false,
-            complaints: false,
-            notifications: false,
-            viewReports: false
-        };
+        // Initialize expanded state for each feature, with first one expanded
+        return ALL_FEATURES.reduce((acc, feature, index) => ({
+            ...acc,
+            [feature.key.toLowerCase().replace(/\s+/g, '')]: index === 0
+        }), {});
     });
 
     const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -84,7 +103,8 @@ const Sidebar = () => {
                                     <ChevronDown className="h-4 w-4" />
                                 ) : (
                                     <ChevronRight className="h-4 w-4" />
-                                ))}
+                                ))
+                                }
                             </button>
                             {sidebarOpen && isExpanded && (
                                 <div className="ml-6 mt-1 space-y-1">
@@ -97,11 +117,11 @@ const Sidebar = () => {
                                             -{item.label}
                                         </Link>
                                     ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                }))}
+                         </div>
+)}
+</div>
+
+                )}))}
 
                 {/* Dashboards Section */}
                 <div className="mb-6">
@@ -747,4 +767,4 @@ const Sidebar = () => {
     );
 };
 
-export default Sidebar;
+export default Sidebar; 
